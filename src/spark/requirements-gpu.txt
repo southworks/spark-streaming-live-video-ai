@@ -1,0 +1,8 @@
+opencv-python
+kafka-python
+h5py==2.9.0
+pillow
+keras==2.3.1
+tensorflow-gpu==2.0.0
+mtcnn
+cassandra-driver==3.24.0

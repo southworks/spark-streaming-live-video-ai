@@ -1,0 +1,7 @@
+cassandra-driver==3.24.0
+Flask
+kafka-python
+simplejson
+opencv-python-headless
+git+https://github.com/fatiherikli/nginxparser.git
+flask-cors

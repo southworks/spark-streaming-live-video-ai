@@ -1,0 +1,6 @@
+node_modules
+build
+Dockerfile
+.dockerignore
+.eslintcache
+README.md

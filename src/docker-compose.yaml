@@ -1,0 +1,225 @@
+version: "2"
+
+volumes:
+  nginx-conf:
+
+services:
+
+  # API
+  api:
+    build: ./api
+    ports:
+      - "8000:8000"
+    environment:
+    - CASSANDRA_HOST
+    - CASSANDRA_PORT
+    - CASSANDRA_KEYSPACE
+    - CASSANDRA_VIDEOS_TABLE
+    - CASSANDRA_ANALYSIS_TABLE
+    - KAFKA_HOST
+    - KAFKA_PORT
+    - KAFKA_VIDEOS_TOPIC
+    - KAFKA_FRAMES_TOPIC
+    - NGINX_HOST
+    - API_PORT=8000
+    depends_on:
+      cassandra:
+        condition: service_healthy
+    volumes:
+      - ./data/frames:/app/frames
+      - nginx-conf:/app/nginx
+
+  # Cassandra
+  cassandra:
+    image: cassandra:3.11
+    volumes:
+      - ./data/cassandra/:/var/lib/cassandra
+    ports:
+      - '9042:9042'
+    healthcheck:
+      test: [ "CMD-SHELL", "[ $$(nodetool statusgossip) = running ]" ]
+      interval: 30s
+      timeout: 15s
+      retries: 7
+    depends_on:
+      - kafka
+
+  # Kafka
+  zookeeper:
+    image: "bitnami/zookeeper:latest"
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+  kafka:
+    image: "bitnami/kafka:latest"
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
+
+  # spark
+  spark:
+    build: ./spark
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - CASSANDRA_HOST
+      - CASSANDRA_PORT
+      - CASSANDRA_KEYSPACE
+      - CASSANDRA_VIDEOS_TABLE
+      - CASSANDRA_ANALYSIS_TABLE
+      - KAFKA_HOST
+      - KAFKA_PORT
+      - KAFKA_VIDEOS_TOPIC
+      - KAFKA_FRAMES_TOPIC
+      - RESIZE_TARGET_HEIGHT
+      - CASSANDRA_METRICS_TABLE
+      - INGEST_JOB_REPARTITION
+      - STORAGE_JOB_REPARTITION
+      - INFERENCE_JOB_REPARTITION
+    ports:
+      - "8081:8080"     # Spark Web UI
+      - "8082:4040"     # Job #1 UI
+      - "8083:4041"     # Job #2 UI
+      - "8084:4042"     # Job #3 UI
+    volumes:
+      - ./spark:/opt/bitnami/spark/spark-jobs
+  spark-worker-1:
+    build: ./spark
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - CASSANDRA_HOST
+      - CASSANDRA_PORT
+      - CASSANDRA_KEYSPACE
+      - CASSANDRA_VIDEOS_TABLE
+      - CASSANDRA_ANALYSIS_TABLE
+      - KAFKA_HOST
+      - KAFKA_PORT
+      - KAFKA_VIDEOS_TOPIC
+      - KAFKA_FRAMES_TOPIC
+      - RESIZE_TARGET_HEIGHT
+      - CASSANDRA_METRICS_TABLE
+      - INGEST_JOB_REPARTITION
+      - STORAGE_JOB_REPARTITION
+      - INFERENCE_JOB_REPARTITION
+    volumes:
+      - ./data/frames:/opt/bitnami/spark/frames
+    ports:
+      - "8085:8081"
+  spark-worker-2:
+    build: ./spark
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - CASSANDRA_HOST
+      - CASSANDRA_PORT
+      - CASSANDRA_KEYSPACE
+      - CASSANDRA_VIDEOS_TABLE
+      - CASSANDRA_ANALYSIS_TABLE
+      - KAFKA_HOST
+      - KAFKA_PORT
+      - KAFKA_VIDEOS_TOPIC
+      - KAFKA_FRAMES_TOPIC
+      - RESIZE_TARGET_HEIGHT
+      - CASSANDRA_METRICS_TABLE
+      - INGEST_JOB_REPARTITION
+      - STORAGE_JOB_REPARTITION
+      - INFERENCE_JOB_REPARTITION
+    volumes:
+      - ./data/frames:/opt/bitnami/spark/frames
+    ports:
+      - "8086:8081"
+  spark-worker-3:
+    build: ./spark
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - CASSANDRA_HOST
+      - CASSANDRA_PORT
+      - CASSANDRA_KEYSPACE
+      - CASSANDRA_VIDEOS_TABLE
+      - CASSANDRA_ANALYSIS_TABLE
+      - KAFKA_HOST
+      - KAFKA_PORT
+      - KAFKA_VIDEOS_TOPIC
+      - KAFKA_FRAMES_TOPIC
+      - RESIZE_TARGET_HEIGHT
+      - CASSANDRA_METRICS_TABLE
+      - INGEST_JOB_REPARTITION
+      - STORAGE_JOB_REPARTITION
+      - INFERENCE_JOB_REPARTITION
+    volumes:
+      - ./data/frames:/opt/bitnami/spark/frames
+    ports:
+      - "8087:8081"
+  spark-worker-4:
+    build: ./spark
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - CASSANDRA_HOST
+      - CASSANDRA_PORT
+      - CASSANDRA_KEYSPACE
+      - CASSANDRA_VIDEOS_TABLE
+      - CASSANDRA_ANALYSIS_TABLE
+      - KAFKA_HOST
+      - KAFKA_PORT
+      - KAFKA_VIDEOS_TOPIC
+      - KAFKA_FRAMES_TOPIC
+      - RESIZE_TARGET_HEIGHT
+      - CASSANDRA_METRICS_TABLE
+      - INGEST_JOB_REPARTITION
+      - STORAGE_JOB_REPARTITION
+      - INFERENCE_JOB_REPARTITION
+    ports:
+      - "8088:8081"
+  # RTMP nginx
+  nginx:
+    image: tiangolo/nginx-rtmp
+    restart: unless-stopped
+    ports:
+      - "1935:1935"
+    volumes:
+      - nginx-conf:/etc/nginx
+  # Video App
+  video-app:
+    build: ./video-app
+    ports:
+      - '8080:8080'
+    depends_on:
+      - api
